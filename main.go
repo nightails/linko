@@ -20,7 +20,9 @@ func main() {
 	flag.Parse()
 
 	status := run(ctx, cancel, *httpPort, *dataDir)
+	fmt.Printf("Linko is running on http://localhost:%d\n", *httpPort)
 	cancel()
+	fmt.Printf("Linko is shutting down\n")
 	os.Exit(status)
 }
 
