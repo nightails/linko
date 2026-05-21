@@ -11,6 +11,14 @@ import (
 type closeFunc func() error
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
+	debugHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})
+
+	closeLogger := func() error {
+		return nil
+	}
+
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -19,7 +27,11 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		bufferedFile := bufio.NewWriterSize(file, 8192)
 		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 
-		closeLogger := func() error {
+		infoHandler := slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		})
+
+		closeLogger = func() error {
 			if err := bufferedFile.Flush(); err != nil {
 				return fmt.Errorf("failed to flush buffered log file: %w", err)
 			}
@@ -29,12 +41,8 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 			return nil
 		}
 
-		return slog.New(slog.NewTextHandler(multiWriter, nil)), closeLogger, nil
+		return slog.New(slog.NewMultiHandler(debugHandler, infoHandler)), closeLogger, nil
 	}
 
-	closeLogger := func() error {
-		return nil
-	}
-
-	return slog.New(slog.NewTextHandler(os.Stderr, nil)), closeLogger, nil
+	return slog.New(debugHandler), closeLogger, nil
 }
