@@ -27,7 +27,7 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		bufferedFile := bufio.NewWriterSize(file, 8192)
 		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 
-		infoHandler := slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
+		infoHandler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
 			Level: slog.LevelInfo,
 		})
 
