@@ -70,7 +70,7 @@ func (s *server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.logger.Info(
-		"Generated short code",
+		"generated short code",
 		slog.String("code", shortCode),
 		slog.String("url", longURL),
 	)
@@ -86,7 +86,7 @@ func (s *server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "not found", http.StatusNotFound)
 		} else {
 			s.logger.Error(
-				"Failed to lookup URL",
+				"failed to lookup URL",
 				slog.Any("error", err),
 			)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -110,7 +110,7 @@ func (s *server) handlerListURLs(w http.ResponseWriter, r *http.Request) {
 	codes, err := s.store.List(r.Context())
 	if err != nil {
 		s.logger.Error(
-			"Failed to list URLs",
+			"failed to list URLs",
 			slog.Any("error", err),
 		)
 		http.Error(w, "failed to list URLs", http.StatusInternalServerError)
