@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -35,7 +35,11 @@ func (s *server) authMiddleware(next http.Handler) http.Handler {
 		}
 		ok, err := s.validatePassword(password, stored)
 		if err != nil {
-			s.logger.Error(fmt.Sprintf("error validating password for user: %s, error: %v\n", username, err))
+			s.logger.Error(
+				"error validating password",
+				slog.String("user", username),
+				slog.Any("error", err),
+			)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -50,14 +54,10 @@ func (s *server) authMiddleware(next http.Handler) http.Handler {
 
 func (s *server) validatePassword(password, stored string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(stored), []byte(password))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return false, nil
 	}
 	if err != nil {
-		s.logger.Error(
-			"Error validating password",
-			slog.Any("error", err),
-		)
 		return false, err
 	}
 	return true, nil
