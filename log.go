@@ -2,17 +2,21 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+
+	pkgerr "github.com/pkg/errors"
 )
 
 type closeFunc func() error
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	debugHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level:       slog.LevelDebug,
+		ReplaceAttr: replaceAttr,
 	})
 
 	closeLogger := func() error {
@@ -28,7 +32,8 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 
 		infoHandler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: replaceAttr,
 		})
 
 		closeLogger = func() error {
@@ -45,4 +50,33 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	}
 
 	return slog.New(debugHandler), closeLogger, nil
+}
+
+type stackTracer interface {
+	error
+	StackTrace() pkgerr.StackTrace
+}
+
+func replaceAttr(groups []string, a slog.Attr) slog.Attr {
+	if a.Key == "error" {
+		err, ok := a.Value.Any().(error)
+		if !ok {
+			return a
+		}
+
+		if stackErr, ok := errors.AsType[stackTracer](err); ok {
+			return slog.GroupAttrs(
+				"error",
+				slog.Attr{
+					Key:   "message",
+					Value: slog.StringValue(stackErr.Error()),
+				},
+				slog.Attr{
+					Key:   "stack_trace",
+					Value: slog.StringValue(fmt.Sprintf("%+v", stackErr.StackTrace())),
+				},
+			)
+		}
+	}
+	return a
 }
