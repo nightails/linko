@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 
+	"boot.dev/linko/internal/build"
 	"boot.dev/linko/internal/linkoerr"
 	pkgerr "github.com/pkg/errors"
 )
@@ -15,6 +16,7 @@ import (
 type closeFunc func() error
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
+	// default debug handler
 	debugHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level:       slog.LevelDebug,
 		ReplaceAttr: replaceAttr,
@@ -23,7 +25,9 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	closeLogger := func() error {
 		return nil
 	}
+	logger := slog.New(debugHandler)
 
+	// open log file
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -47,10 +51,16 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 			return nil
 		}
 
-		return slog.New(slog.NewMultiHandler(debugHandler, infoHandler)), closeLogger, nil
+		logger = slog.New(slog.NewMultiHandler(debugHandler, infoHandler))
 	}
 
-	return slog.New(debugHandler), closeLogger, nil
+	// add build info
+	logger = logger.With(
+		slog.String("git_sha", build.GitSHA),
+		slog.String("build_time", build.BuildTime),
+	)
+
+	return logger, closeLogger, nil
 }
 
 type stackTracer interface {
