@@ -29,7 +29,7 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 
 	// open log file
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to open log file: %w", err)
 		}
@@ -54,10 +54,15 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		logger = slog.New(slog.NewMultiHandler(debugHandler, infoHandler))
 	}
 
+	env := os.Getenv("ENV")
+	hostname, _ := os.Hostname()
+
 	// add build info
 	logger = logger.With(
 		slog.String("git_sha", build.GitSHA),
 		slog.String("build_time", build.BuildTime),
+		slog.String("env", env),
+		slog.String("hostname", hostname),
 	)
 
 	return logger, closeLogger, nil
