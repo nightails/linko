@@ -13,6 +13,12 @@ import (
 	pkgerr "github.com/pkg/errors"
 )
 
+const logContextKey contextKey = "log_context"
+
+type LogContext struct {
+	Username string
+}
+
 type closeFunc func() error
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
