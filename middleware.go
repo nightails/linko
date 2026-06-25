@@ -2,11 +2,25 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"io"
 	"log/slog"
 	"net/http"
 	"time"
 )
+
+const requestIDKey = "X-Request-ID"
+
+func requestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.Header.Get(requestIDKey)
+		if id == "" {
+			id = rand.Text()
+		}
+		w.Header().Set(requestIDKey, id)
+		next.ServeHTTP(w, r)
+	})
+}
 
 func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -27,6 +41,7 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.String("client_ip", r.RemoteAddr),
+				slog.String("request_id", r.Header.Get(requestIDKey)),
 				slog.Duration("duration", time.Since(start)),
 				slog.Int("request_body_bytes", spyReader.bytesRead),
 				slog.Int("response_status", spyWriter.statusCode),
