@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"boot.dev/linko/internal/build"
@@ -17,6 +19,7 @@ const logContextKey contextKey = "log_context"
 
 type LogContext struct {
 	Username string
+	Error    error
 }
 
 type closeFunc func() error
@@ -132,4 +135,11 @@ func replaceAttr(groups []string, a slog.Attr) slog.Attr {
 		return slog.GroupAttrs("error", attrs...)
 	}
 	return a
+}
+
+func httpError(ctx context.Context, w http.ResponseWriter, status int, err error) {
+	if logCtx, ok := ctx.Value(logContextKey).(*LogContext); ok {
+		logCtx.Error = err
+	}
+	http.Error(w, err.Error(), status)
 }

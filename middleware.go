@@ -23,12 +23,6 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(spyWriter, r)
 
-			if logCtx.Username != "" {
-				logger.Info("Served request",
-					slog.String("user", logCtx.Username),
-				)
-			}
-
 			attrs := []any{
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
@@ -41,6 +35,10 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			if logCtx.Username != "" {
 				attrs = append(attrs, slog.String("user", logCtx.Username))
+			}
+
+			if logCtx.Error != nil {
+				attrs = append(attrs, slog.Any("error", logCtx.Error))
 			}
 
 			logger.Info("Served request", attrs...)
