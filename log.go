@@ -12,6 +12,8 @@ import (
 
 	"boot.dev/linko/internal/build"
 	"boot.dev/linko/internal/linkoerr"
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 	pkgerr "github.com/pkg/errors"
 )
 
@@ -25,10 +27,12 @@ type LogContext struct {
 type closeFunc func() error
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
-	// default debug handler
-	debugHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+	w := os.Stderr
+	// default debug handler with tint
+	debugHandler := tint.NewHandler(w, &tint.Options{
 		Level:       slog.LevelDebug,
 		ReplaceAttr: replaceAttr,
+		NoColor:     !isatty.IsTerminal(w.Fd()) && !isatty.IsCygwinTerminal(w.Fd()),
 	})
 
 	closeLogger := func() error {
