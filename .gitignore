@@ -3,6 +3,7 @@ linko
 *~
 vendor/
 *.log
+*.gz
 
 # Goland IDE
 .idea/
