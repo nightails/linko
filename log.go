@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
+	"slices"
 
 	"boot.dev/linko/internal/build"
 	"boot.dev/linko/internal/linkoerr"
@@ -32,6 +34,23 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	)
 
 	replaceAttr := func(groups []string, a slog.Attr) slog.Attr {
+		var sensitiveKeys = []string{"user", "password", "key", "apiKey", "secret", "pin", "creditcardno"}
+
+		if slices.Contains(sensitiveKeys, a.Key) {
+			return slog.String(a.Key, "[REDACTED]")
+		}
+
+		if a.Key == "long_url" {
+			u, err := url.Parse(a.Value.String())
+			if err != nil {
+				return a
+			}
+			if u.User != nil {
+				u.User = url.UserPassword("REDACTED", "REDACTED")
+			}
+			return slog.String(a.Key, u.String())
+		}
+
 		if a.Key == "error" {
 			err, ok := a.Value.Any().(error)
 			if !ok {
@@ -78,6 +97,7 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 
 			return slog.GroupAttrs("error", attrs...)
 		}
+
 		return a
 	}
 
