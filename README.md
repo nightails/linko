@@ -17,3 +17,12 @@ docker compose up
 ```
 
 You can access the Prometheus dashboard at [http://localhost:9090](http://localhost:9090).
+
+### Grafana
+
+Grafana is available at [http://localhost:3000](http://localhost:3000).
+
+Log in with the following credentials:
+
+- Username: `admin`
+- Password: `admin`
