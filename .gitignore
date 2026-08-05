@@ -11,3 +11,4 @@ vendor/
 # Profilling
 *.prof
 *.pprof.*
+*.svg
