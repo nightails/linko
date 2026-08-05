@@ -7,3 +7,7 @@ vendor/
 
 # Goland IDE
 .idea/
+
+# Profilling
+*.prof
+*.pprof.*
