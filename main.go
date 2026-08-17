@@ -25,6 +25,17 @@ func main() {
 }
 
 func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir string) int {
+	shutdownTracer, err := initTracing(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize tracing: %v", err)
+		return 1
+	}
+	defer func() {
+		if err := shutdownTracer(context.Background()); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to shutdown tracing: %v", err)
+		}
+	}()
+
 	logger, closeLogger, err := initializeLogger(os.Getenv("LINKO_LOG_FILE"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v", err)
@@ -41,6 +52,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 		logger.Error(fmt.Sprintf("failed to create store: %v", err))
 		return 1
 	}
+
 	s := newServer(*st, httpPort, cancel, logger)
 	var serverErr error
 	go func() {

@@ -26,3 +26,7 @@ Log in with the following credentials:
 
 - Username: `admin`
 - Password: `admin`
+
+### Jaeger
+
+Jaeger is available at [http://localhost:16686](http://localhost:16686).
