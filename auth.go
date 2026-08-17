@@ -23,6 +23,9 @@ var allowedUsers = map[string]string{
 }
 
 func (s *server) authMiddleware(next http.Handler) http.Handler {
+	ctx, span := tracer.Start(context.Background(), "auth.auth_middleware")
+	defer span.End()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok {
@@ -34,7 +37,7 @@ func (s *server) authMiddleware(next http.Handler) http.Handler {
 			httpError(r.Context(), w, http.StatusUnauthorized, errors.New("unauthorized"))
 			return
 		}
-		ok, err := s.validatePassword(password, stored)
+		ok, err := s.validatePassword(ctx, password, stored)
 		if err != nil {
 			s.logger.Error(
 				"error validating password",
@@ -56,7 +59,10 @@ func (s *server) authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *server) validatePassword(password, stored string) (bool, error) {
+func (s *server) validatePassword(ctx context.Context, password, stored string) (bool, error) {
+	_, span := tracer.Start(ctx, "auth.validate_password")
+	defer span.End()
+
 	err := bcrypt.CompareHashAndPassword([]byte(stored), []byte(password))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return false, nil
